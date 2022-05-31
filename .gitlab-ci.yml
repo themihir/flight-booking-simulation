@@ -1,0 +1,106 @@
+image: mvn:latest
+
+variables:
+  GIT_STRATEGY: clone
+  MAVEN_CLI_OPTS: "-s .m2/settings.xml --batch-mode"
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+stages:
+  - build
+  - test
+  - deploy
+
+Build:
+  stage: build
+  tags:
+    - ugrad
+  script:
+    - mvn package
+    - echo "Build started..."
+Test:
+  tags:
+    - ugrad
+  stage: test
+  script:
+    - mvn test
+    - echo "Test started..."
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - ./target/surefire-reports/TEST-*.xml
+
+Deploy:
+  tags:
+    - ugrad
+  stage: deploy
+  image: alpine:3.11
+  before_script:
+    - apk update && apk add openssh-client bash
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - touch ~/.ssh/config
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - ssh-keyscan -H $DEPLOY_SERVER_IP_DEVELOPMENT >> ~/.ssh/known_hosts
+  script:
+    - mvn package
+    - echo "Deploying started..."
+    - ssh ubuntu@$DEPLOY_SERVER_IP_DEVELOPMENT "sudo systemctl stop airdal.service"
+    - scp ./target/airdal.jar ubuntu@$DEPLOY_SERVER_IP_DEVELOPMENT:~/air-dal/
+    - ssh ubuntu@$DEPLOY_SERVER_IP_DEVELOPMENT "sudo systemctl start airdal.service"
+    - ssh ubuntu@$DEPLOY_SERVER_IP_DEVELOPMENT "cd ~/group7 && git stash && git checkout development && git pull origin development"
+    - echo "Finished deploying the app."
+  only:
+    - master
+
+Deploy_Development:
+  tags:
+    - ugrad
+  stage: deploy
+  image: alpine:3.11
+  before_script:
+    - apk update && apk add openssh-client bash
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - touch ~/.ssh/config
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - ssh-keyscan -H $DEPLOY_SERVER_IP_DEVELOPMENT >> ~/.ssh/known_hosts
+  script:
+    - mvn package
+    - echo "Deploying started..."
+    - ssh ubuntu@$DEPLOY_SERVER_IP_DEVELOPMENT "sudo systemctl stop airdal.service"
+    - scp ./target/airdal.jar ubuntu@$DEPLOY_SERVER_IP_DEVELOPMENT:~/air-dal/
+    - ssh ubuntu@$DEPLOY_SERVER_IP_DEVELOPMENT "sudo systemctl start airdal.service"
+    - ssh ubuntu@$DEPLOY_SERVER_IP_DEVELOPMENT "cd ~/group7 && git stash && git checkout development && git pull origin development"
+    - echo "Finished deploying the app."
+  only:
+    - development
+
+Deploy_Test:
+  tags:
+    - ugrad
+  stage: deploy
+  image: alpine:3.11
+  before_script:
+    - apk update && apk add openssh-client bash
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - touch ~/.ssh/config
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - ssh-keyscan -H $DEPLOY_SERVER_IP_DEVELOPMENT >> ~/.ssh/known_hosts
+  script:
+    - mvn package
+    - echo "Deploying started..."
+    - ssh ubuntu@$DEPLOY_SERVER_IP_DEVELOPMENT "sudo systemctl stop airdal.service"
+    - scp ./target/airdal.jar ubuntu@$DEPLOY_SERVER_IP_DEVELOPMENT:~/air-dal/
+    - ssh ubuntu@$DEPLOY_SERVER_IP_DEVELOPMENT "sudo systemctl start airdal.service"
+    - ssh ubuntu@$DEPLOY_SERVER_IP_DEVELOPMENT "cd ~/group7 && git stash && git checkout development && git pull origin development"
+    - echo "Finished deploying the app."
+  only:
+    - qa
+
+after_script: 
+  - echo "Pipeline Completed :)"

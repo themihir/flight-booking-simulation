@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Route</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+</head>
+<body>
+
+<nav class="teal darken-3">
+    <div class="nav-wrapper">
+        <a href="dashboard.html" class="brand-logo" style="padding-left:20px;">AirDal</a>
+        <ul id="nav-mobile" class="right hide-on-med-and-down">
+            <li><a href="search.html">Search</a></li>
+            <li><a href="managebooking.html">Manage</a></li>
+            <li><a href="baggage.html">Baggage</a></li>
+            <li><a href="baggageRegister.html">Baggage Register</a></li>
+            <li><a href="webcheckin.html">Web-Checkin</a></li>
+            <li><a href="helpAndSupport.html">Help & Support</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col s12 center"><h2 class="light">Baggage Route</h2></div>
+    </div>
+
+
+    <div class="row" id="result">
+
+        
+
+
+      </div>
+
+    
+
+
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js" integrity="sha512-u9akINsQsAkG9xjc1cnGF4zw5TFDwkxuc9vUp5dltDWYCSmyd0meygbvgXrlc/z7/o4a19Fb5V0OUE58J7dcyw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="./js/script.js"></script>
+<script>
+
+    function onload(){
+        const hostName = "http://localhost:8080";
+        const urlParams = new URLSearchParams(window.location.search);
+        let baggageId = urlParams.get('baggageId')
+
+        axios({
+        method: 'post',
+        url: `${hostName}/logistics/calculateRoute`,
+        data: {
+            "baggageId": baggageId
+        },
+        headers: {
+            'Content-Type': 'application/json',
+            'userid': retrieve('user').userId
+        }
+    })
+        .then(function (response) {
+            
+                const resultString = `
+                
+                <div class="col s3">
+                    <div class="card blue-grey darken-3">
+                        <div class="card-content white-text">
+                        <span class="card-title">Checkpoint 1</span>
+
+                            <b>Checkpoint Type:</b> Checkin Counter<br>
+                            <b>Operator Name:</b> ${response.data.checkinCounter.publicIdentifier}<br>
+                            <b>Operator Name:</b> ${response.data.checkinCounter.operator}<br>
+                            <b>Operator Contact:</b> ${response.data.checkinCounter.operatorContact}<br>
+
+                        </div>
+                        <div class="card-action white-text">
+                            <b>Next Edge distance:</b> ${Math.round(response.data.checkinCounter.distance)} ft
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col s3">
+                    <div class="card blue-grey darken-3">
+                        <div class="card-content white-text">
+                        <span class="card-title">Checkpoint 2</span>
+
+                            <b>Checkpoint Type:</b> Checkin Belt<br>
+                            <b>Operator Name:</b> ${response.data.checkinBelt.publicIdentifier}<br>
+                            <b>Operator Name:</b> ${response.data.checkinBelt.operator}<br>
+                            <b>Operator Contact:</b> ${response.data.checkinBelt.operatorContact}<br>
+
+                        </div>
+                        <div class="card-action white-text">
+                            <b>Next Edge distance:</b> ${Math.round(response.data.checkinBelt.distance)} ft
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col s3">
+                    <div class="card blue-grey darken-3">
+                        <div class="card-content white-text">
+                        <span class="card-title">Checkpoint 3</span>
+
+                            <b>Checkpoint Type:</b> Baggage Carousal<br>
+                            <b>Operator Name:</b> ${response.data.baggageCarousal.publicIdentifier}<br>
+                            <b>Operator Name:</b> ${response.data.baggageCarousal.operator}<br>
+                            <b>Operator Contact:</b> ${response.data.baggageCarousal.operatorContact}<br>
+
+                        </div>
+                        <div class="card-action white-text">
+                            <b>Next Edge distance:</b> ${Math.round(response.data.baggageCarousal.distance)} ft
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col s3">
+                    <div class="card blue-grey darken-3">
+                        <div class="card-content white-text">
+                        <span class="card-title">Checkpoint 4</span>
+
+                            <b>Checkpoint Type:</b> Aircraft Gate<br>
+                            <b>Operator Name:</b> ${response.data.gate.publicIdentifier}<br>
+                            <b>Operator Name:</b> ${response.data.gate.operator}<br>
+                            <b>Operator Contact:</b> ${response.data.gate.operatorContact}<br>
+
+                        </div>
+                        <div class="card-action white-text">
+                            <b>Next Edge distance:</b> -
+                        </div>
+                    </div>
+                </div>
+                `;
+            
+                $('#result').html(resultString);
+
+        })
+    }
+
+    onload();
+
+
+
+</script>
+</body>
+</html>
